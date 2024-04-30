@@ -5,14 +5,16 @@ PGraphics selection_mask;
 void setup() {
   size(1000,1000);
   img = loadImage("trees1.jpg");
-  background(0);
   draw_mask();
   slice = createImage(width/2, height/2, ARGB);
   
   print("total slices = ", totalSlices, "\n");
 }
 
-void draw() {  
+void draw() { 
+  background(0);
+  //image(selection_mask,0,0);
+  
   slice = img.get(
     floor((img.width-width)*float(mouseX)/width), 
     floor((img.height-height)*float(mouseY)/height), width/2, height/2);
@@ -21,7 +23,7 @@ void draw() {
   translate(width / 2, height / 2);
   //apply slice in a circle
   for (int k = 0; k <= totalSlices; k++) {
-      rotate(k * radians(360 / (totalSlices / 2)));
+      rotate(2*k * radians(360 / totalSlices));
       image(slice, 0, 0);
       scale(-1.0, 1.0);
       image(slice, 0, 0);
@@ -33,13 +35,13 @@ void keyPressed() {
   switch(keyCode) {
     case UP:
       totalSlices = totalSlices + 4;
-      print("total slices = ", totalSlices, "\n");
       draw_mask();
+      print("total slices = ", totalSlices, "\n");
       break;
     case DOWN:
       totalSlices = max(4, totalSlices - 4);
-      print("total slices = ", totalSlices, "\n");
       draw_mask();
+      print("total slices = ", totalSlices, "\n");
       break;
     case ENTER:
       saveFrame("saved_images/kaleidoscope_tree####.jpg");
@@ -52,10 +54,19 @@ void draw_mask() {
   selection_mask.beginDraw();
   selection_mask.noStroke();
   selection_mask.beginShape();
-  //selection_mask.vertex(0,0);
-  //selection_mask.vertex(selection_mask.width, 0);
-  //selection_mask.vertex(width/2, ceil(float(width)/2*sin(TWO_PI/totalSlices)));
-  selection_mask.arc(0,0, width, height, 0, radians(360. / totalSlices));
+    //selection_mask.arc(0,0, width, height, 0, radians(360. / totalSlices));
+  if (totalSlices == 4) {
+    // whole rectangle
+    selection_mask.vertex(0,0);
+    selection_mask.vertex(width, 0);
+    selection_mask.vertex(width, height);
+    selection_mask.vertex(0, height);  
+  } else {
+    // triangle
+    selection_mask.vertex(0,0);
+    selection_mask.vertex(width, 0);
+    selection_mask.vertex(width, ceil(float(width)*tan(TWO_PI/totalSlices)));
+  }
   selection_mask.endShape(CLOSE);
   selection_mask.endDraw();
 }
