@@ -2,6 +2,8 @@ int totalSlices = 8;
 PImage img,img1,img2,img3, slice;
 PGraphics selection_mask;
 String img_varname;
+int imgX, imgY;
+float beta, delta;
 
 void setup() {
   size(1000,1000);
@@ -11,22 +13,25 @@ void setup() {
   img = img1;
   img_varname = "img1";
   print("img = ", img_varname, "\n");
+  
+  print("total slices = ", totalSlices, "\n");
   draw_mask();
   slice = createImage(width/2, height/2, ARGB);
   
-  print("total slices = ", totalSlices, "\n");
+  imgX = img.width/2;
+  imgY = img.height/2;
+  beta = 0.0;
 }
 
 void draw() { 
   background(0);
   //image(selection_mask,0,0);
   
-  slice = img.get(
-    floor((img.width-width)*float(mouseX)/width), 
-    floor((img.height-height)*float(mouseY)/height), width/2, height/2);
+  update_img_zone();
+  slice = img.get(imgX, imgY, width/2, height/2);
   slice.mask(selection_mask);
   
-  translate(width / 2, height / 2);
+  translate(width/2, height/2);
   //apply slice in a circle
   for (int k = 0; k <= totalSlices; k++) {
       rotate(2*k * radians(360 / totalSlices));
@@ -72,6 +77,11 @@ void keyPressed() {
       saveFrame("saved_images/kaleidoscope_tree####.jpg");
   }
   
+}
+
+void update_img_zone() {
+  imgX = floor((img.width-width)*float(mouseX)/width);
+  imgY = floor((img.height-height)*float(mouseY)/height);
 }
 
 void draw_mask() {
