@@ -1,10 +1,16 @@
 int totalSlices = 8;
-PImage img, slice;
+PImage img,img1,img2,img3, slice;
 PGraphics selection_mask;
+String img_varname;
 
 void setup() {
   size(1000,1000);
-  img = loadImage("trees1.jpg");
+  img1 = loadImage("trees1.jpg");
+  img2 = loadImage("trees2.jpg");
+  img3 = loadImage("trees3.jpg");
+  img = img1;
+  img_varname = "img1";
+  print("img = ", img_varname, "\n");
   draw_mask();
   slice = createImage(width/2, height/2, ARGB);
   
@@ -42,6 +48,25 @@ void keyPressed() {
       totalSlices = max(4, totalSlices - 4);
       draw_mask();
       print("total slices = ", totalSlices, "\n");
+      break;
+    case TAB:
+      switch (img_varname) {
+        case "img1":
+          img = img2;
+          img_varname = "img2";
+          print("img = ", img_varname, "\n");
+          break;
+        case "img2":
+          img = img3;
+          img_varname = "img3";
+          print("img = ", img_varname, "\n");
+          break;
+        case "img3":
+          img = img1;
+          img_varname = "img1";
+          print("img = ", img_varname, "\n");
+          break;
+      }
       break;
     case ENTER:
       saveFrame("saved_images/kaleidoscope_tree####.jpg");
