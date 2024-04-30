@@ -2,25 +2,33 @@ int totalSlices = 8;
 PImage img,img1,img2,img3, slice;
 PGraphics selection_mask;
 String img_varname;
+
 int imgX, imgY;
-float beta, delta;
+float ratio_out, max_ratio_out, delta_ratio_out;
+int delta = 50;
+int XL, XR, YU, YD;
+boolean spiral_out = true;
+String spiral_leg = "TOP";
 
 void setup() {
   size(1000,1000);
-  img1 = loadImage("trees1.jpg");
-  img2 = loadImage("trees2.jpg");
-  img3 = loadImage("trees3.jpg");
-  img = img1;
-  img_varname = "img1";
-  print("img = ", img_varname, "\n");
-  
   print("total slices = ", totalSlices, "\n");
   draw_mask();
   slice = createImage(width/2, height/2, ARGB);
+
+  img1 = loadImage("trees1.jpg");
+  img2 = loadImage("trees2.jpg");
+  img3 = loadImage("trees3.jpg");
   
+  img = img1;
+  img_varname = "img1";
+  print("img = ", img_varname, "\n");
+  update_loop_limits();
+    
   imgX = img.width/2;
   imgY = img.height/2;
-  beta = 0.0;
+  ratio_out = 0.1;
+  delta_ratio_out = 0.1;
 }
 
 void draw() { 
@@ -28,6 +36,7 @@ void draw() {
   //image(selection_mask,0,0);
   
   update_img_zone();
+  //print("imgX = ", imgX, ", imgY = ", imgY, "\n");
   slice = img.get(imgX, imgY, width/2, height/2);
   slice.mask(selection_mask);
   
@@ -55,23 +64,7 @@ void keyPressed() {
       print("total slices = ", totalSlices, "\n");
       break;
     case TAB:
-      switch (img_varname) {
-        case "img1":
-          img = img2;
-          img_varname = "img2";
-          print("img = ", img_varname, "\n");
-          break;
-        case "img2":
-          img = img3;
-          img_varname = "img3";
-          print("img = ", img_varname, "\n");
-          break;
-        case "img3":
-          img = img1;
-          img_varname = "img1";
-          print("img = ", img_varname, "\n");
-          break;
-      }
+      iterate_img();
       break;
     case ENTER:
       saveFrame("saved_images/kaleidoscope_tree####.jpg");
@@ -79,9 +72,96 @@ void keyPressed() {
   
 }
 
+void iterate_img() {
+  switch (img_varname) {
+    case "img1":
+      img = img2;
+      update_loop_limits();
+      img_varname = "img2";
+      print("img = ", img_varname, "\n");
+      break;
+    case "img2":
+      img = img3;
+      update_loop_limits();
+      img_varname = "img3";
+      print("img = ", img_varname, "\n");
+      break;
+    case "img3":
+      img = img1;
+      update_loop_limits();
+      img_varname = "img1";
+      print("img = ", img_varname, "\n");
+      break;
+  }
+}
+
+void update_loop_limits() {
+  XL = max(floor(img.width/2 * (1 - ratio_out)), width/2);
+  XR = min(floor(img.width/2 * (1 + ratio_out)), img.width-width/2);
+  YU = max(floor(img.height/2 * (1 - ratio_out)),height/2);
+  YD = min(floor(img.height/2 * (1 + ratio_out)),img.height-height/2);
+  max_ratio_out = min(1.-float(width)/img.width, 1.-float(height)/img.height);
+  print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "max_ratio_out = ", max_ratio_out, XL, XR, YU, YD, "\n");        
+}
+
 void update_img_zone() {
-  imgX = floor((img.width-width)*float(mouseX)/width);
-  imgY = floor((img.height-height)*float(mouseY)/height);
+  switch (spiral_leg) {
+    case "TOP":
+      imgX = imgX + delta;
+      if (imgX >= XR) {
+        imgX = XR;
+        spiral_leg = "RIGHT";
+        print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "\n");        
+      }
+      break;
+    case "RIGHT":
+      imgY = imgY + delta;
+      if (imgY >= YD) {
+        imgY = YD;
+        spiral_leg = "BOTTOM";
+        print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "\n");
+      }
+      break;
+    case "BOTTOM":
+      imgX = imgX - delta;
+      if (imgX <= XL) {
+        imgX = XL;
+        spiral_leg = "LEFT";
+        print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "\n");
+      }
+      break;
+    case "LEFT":
+      imgY = imgY - delta;
+      if (imgY <= YU) {
+        imgY = YU;
+        spiral_leg = "TOP";
+        print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "\n");
+
+      if (spiral_out) {
+        ratio_out = ratio_out + delta_ratio_out;
+        if (ratio_out >= max_ratio_out) {
+          spiral_out = false;
+          ratio_out = ratio_out - delta_ratio_out;
+        }
+        update_loop_limits();
+      } else {
+        ratio_out = ratio_out - delta_ratio_out;
+        if (ratio_out <= 0) {
+          iterate_img();
+          spiral_out = true;
+          ratio_out = ratio_out + delta_ratio_out;
+        }
+        update_loop_limits();
+      }
+
+    }
+      break;
+  }
+  
+
+    
+  //imgX = floor((img.width-width)*float(mouseX)/width);
+  //imgY = floor((img.height-height)*float(mouseY)/height);
 }
 
 void draw_mask() {
