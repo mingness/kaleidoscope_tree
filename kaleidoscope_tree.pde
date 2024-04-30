@@ -24,8 +24,8 @@ void draw() {
   print(float(width)/2, " ",float(width)/2*sin(TWO_PI/totalSlices), "\n");
   
   slice = img.get(
-    floor((img.width-1000)*float(mouseX)/width), 
-    floor((img.height-1000)*float(mouseY)/height), width, height);
+    floor((img.width-width)*float(mouseX)/width), 
+    floor((img.height-height)*float(mouseY)/height), width, height);
   slice.mask(selection_mask);
   
   //image(slice,0,0);
