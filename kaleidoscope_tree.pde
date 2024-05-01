@@ -5,13 +5,14 @@ String img_varname;
 
 int imgX, imgY;
 float ratio_out, max_ratio_out, delta_ratio_out;
-int delta = 50;
+int delta = 1;
 int XL, XR, YU, YD;
 boolean spiral_out = true;
 String spiral_leg = "TOP";
 
 void setup() {
-  size(1000,1000);
+  //size(1500,1000);
+  fullScreen(P2D, 0);
   print("total slices = ", totalSlices, "\n");
   draw_mask();
   slice = createImage(width/2, height/2, ARGB);
@@ -165,7 +166,7 @@ void update_img_zone() {
 }
 
 void draw_mask() {
-  selection_mask = createGraphics(width/2, height/2);
+  selection_mask = createGraphics(width/2, height/2, P2D);
   selection_mask.beginDraw();
   selection_mask.noStroke();
   selection_mask.beginShape();
