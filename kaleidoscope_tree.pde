@@ -15,9 +15,8 @@ void setup() {
   size(1500,1000,P2D);
   //fullScreen(P2D, 0);
   print("total slices = ", totalSlices, "\n");
-  slice_width = width/2;
+  slice_width = ceil(sqrt(float(width)*float(width) + float(height)*float(height)));
   slice_height = height/2;
-  //slice_width = ceil(sqrt(float(width)*float(width) + float(height)*float(height)));
   //slice_height = slice_width;
   draw_mask();
   slice = createImage(slice_width, slice_height, ARGB);
