@@ -1,49 +1,80 @@
-int totalSlices = 12;
-PImage img,img1,img2,img3, slice;
-PGraphics selection_mask;
+int totalSlices = 28;  
+PImage img,img1,img2,img3, img_chunk;
+PGraphics mask_shape, slice;
 String img_varname;
-int slice_width, slice_height;
+int slice_width, slice_height, chunk_width;  // pixel lengths of slice, and chunk objects
+int maskCenterX, maskCenterY;  // where image center of rotation should be
+int imgX, imgY;  // center of image chunk, relative to image
 
-int imgX, imgY;
 float ratio_out, max_ratio_out, delta_ratio_out;
 int delta = 1;
 int XL, XR, YU, YD;
 boolean spiral_out = true;
 String spiral_leg = "TOP";
+float img_rotation, delta_img_rotation = 0.005;
+
+void settings() {
+  size(1000,1000,P2D);
+  //fullScreen(P2D, 0);
+}
 
 void setup() {
-  size(1500,1000,P2D);
-  //fullScreen(P2D, 0);
-  print("total slices = ", totalSlices, "\n");
-  slice_width = ceil(sqrt(float(width)*float(width) + float(height)*float(height)));
-  slice_height = height/2;
-  //slice_height = slice_width;
-  draw_mask();
-  slice = createImage(slice_width, slice_height, ARGB);
-
   img1 = loadImage("trees1.jpg");
   img2 = loadImage("trees2.jpg");
   img3 = loadImage("trees3.jpg");
-  
   img = img1;
   img_varname = "img1";
   print("img = ", img_varname, "\n");
-  update_loop_limits();
-    
   imgX = img.width/2;
   imgY = img.height/2;
+  
+  print("total slices = ", totalSlices, "\n");
+  //slice_width = width/2;
+  slice_width = ceil(0.5*sqrt(float(width)*float(width) + float(height)*float(height)));  // length of half diagonal
+  //slice_height = height/2;
+  slice_height = slice_width;  // for now, slice is square
+  chunk_width = ceil(slice_width*sqrt(2));  // wide enough to cover slice in diamond orientation
+
+  // DEBUG
+  print("slice_width = ", slice_width, "\n");
+  print("chunk_width = ", chunk_width, "\n");
+
+  
+  img_chunk = createImage(chunk_width, chunk_width, ARGB); // grabs chunk of image to rotate
+  slice = createGraphics(slice_width, slice_height, P2D); // image rotated. mask will be applied
+
+  draw_mask();
+
+// looping continuous motion
   ratio_out = 0.1;
   delta_ratio_out = 0.1;
+  update_loop_limits();    
 }
 
 void draw() { 
-  background(0);
-  //image(selection_mask,0,0);
+  background(0);  
   
   update_img_zone();
-  //print("imgX = ", imgX, ", imgY = ", imgY, "\n");
-  slice = img.get(imgX, imgY, slice_width, slice_height);
-  slice.mask(selection_mask);
+  img_chunk = img.get(imgX-chunk_width/2, imgY-chunk_width/2, chunk_width, chunk_width);
+
+  //// DEBUG
+  //image(img_chunk,0,0);  
+
+  slice.beginDraw();
+  slice.translate(maskCenterX, maskCenterY);
+  slice.rotate(img_rotation);
+  slice.image(img_chunk,-chunk_width/2, -chunk_width/2);
+  //// DEBUG
+  //slice.image(img_chunk,0,0);  
+  slice.endDraw();
+
+  //// DEBUG
+  //image(slice,0,0);
+  
+  slice.mask(mask_shape);
+  
+  //// DEBUG
+  //image(slice,slice_width,0);
   
   translate(width/2, height/2);
   //apply slice in a circle
@@ -53,58 +84,41 @@ void draw() {
       scale(-1.0, 1.0);
       image(slice, 0, 0);
   }
+
+  img_rotation = img_rotation+delta_img_rotation;
+}
+
+
+void draw_mask() {
+  mask_shape = createGraphics(slice_width, slice_height, P2D);
+  float angle = TWO_PI/totalSlices;
+  maskCenterX = floor(float(width/4)*cos(angle/2));
+  maskCenterY = floor(float(width/4)*sin(angle/2));
+
+  mask_shape.beginDraw();
+  mask_shape.noStroke();
+  mask_shape.beginShape();
+  mask_shape.arc(0,0, 2*slice_width, 2*slice_width, 0, angle);
+  //if (totalSlices == 4) {
+  //  // whole rectangle
+  //  mask_shape.vertex(0,0);
+  //  mask_shape.vertex(width, 0);
+  //  mask_shape.vertex(width, height);
+  //  mask_shape.vertex(0, height);  
+  //} else {
+  //  // arc works if circle
+  //  mask_shape.arc(0,0, slice_width, slice_width, 0, angle);
+  //}
+  mask_shape.endShape(CLOSE);
+  mask_shape.endDraw();
   resetMatrix();
 }
 
-void keyPressed() {
-  switch(keyCode) {
-    case UP:
-      totalSlices = totalSlices + 4;
-      draw_mask();
-      print("total slices = ", totalSlices, "\n");
-      break;
-    case DOWN:
-      totalSlices = max(4, totalSlices - 4);
-      draw_mask();
-      print("total slices = ", totalSlices, "\n");
-      break;
-    case TAB:
-      iterate_img();
-      break;
-    case ENTER:
-      saveFrame("saved_images/kaleidoscope_tree####.jpg");
-  }
-  
-}
-
-void iterate_img() {
-  switch (img_varname) {
-    case "img1":
-      img = img2;
-      update_loop_limits();
-      img_varname = "img2";
-      print("img = ", img_varname, "\n");
-      break;
-    case "img2":
-      img = img3;
-      update_loop_limits();
-      img_varname = "img3";
-      print("img = ", img_varname, "\n");
-      break;
-    case "img3":
-      img = img1;
-      update_loop_limits();
-      img_varname = "img1";
-      print("img = ", img_varname, "\n");
-      break;
-  }
-}
-
 void update_loop_limits() {
-  XL = max(floor(img.width/2 * (1 - ratio_out)), slice_width);
-  XR = min(floor(img.width/2 * (1 + ratio_out)), img.width-slice_width);
-  YU = max(floor(img.height/2 * (1 - ratio_out)),slice_height);
-  YD = min(floor(img.height/2 * (1 + ratio_out)),img.height-slice_height);
+  XL = max(floor(img.width/2 * (1 - ratio_out)), chunk_width);
+  XR = min(floor(img.width/2 * (1 + ratio_out)), img.width-chunk_width);
+  YU = max(floor(img.height/2 * (1 - ratio_out)),chunk_width);
+  YD = min(floor(img.height/2 * (1 + ratio_out)),img.height-chunk_width);
   max_ratio_out = min(1.-float(width)/img.width, 1.-float(height)/img.height);
   print("spiral leg = ", spiral_leg, " ratio_out = ", ratio_out, "max_ratio_out = ", max_ratio_out, XL, XR, YU, YD, "\n");        
 }
@@ -164,29 +178,54 @@ void update_img_zone() {
   }
   
 
-    
+  //// mouse position affects center
   //imgX = floor((img.width-width)*float(mouseX)/width);
   //imgY = floor((img.height-height)*float(mouseY)/height);
 }
 
-void draw_mask() {
-  selection_mask = createGraphics(slice_width, slice_height, P2D);
-  selection_mask.beginDraw();
-  selection_mask.noStroke();
-  selection_mask.beginShape();
-    //selection_mask.arc(0,0, width, height, 0, radians(360. / totalSlices));
-  if (totalSlices == 4) {
-    // whole rectangle
-    selection_mask.vertex(0,0);
-    selection_mask.vertex(width, 0);
-    selection_mask.vertex(width, height);
-    selection_mask.vertex(0, height);  
-  } else {
-    // triangle
-    selection_mask.vertex(0,0);
-    selection_mask.vertex(width, 0);
-    selection_mask.vertex(width, ceil(float(width)*tan(TWO_PI/totalSlices)));
+
+
+void keyPressed() {
+  switch(keyCode) {
+    case UP:
+      totalSlices = totalSlices + 4;
+      draw_mask();
+      print("total slices = ", totalSlices, "\n");
+      break;
+    case DOWN:
+      totalSlices = max(4, totalSlices - 4);
+      draw_mask();
+      print("total slices = ", totalSlices, "\n");
+      break;
+    case TAB:
+      iterate_img();
+      break;
+    case ENTER:
+      saveFrame("saved_images/kaleidoscope_tree####.jpg");
   }
-  selection_mask.endShape(CLOSE);
-  selection_mask.endDraw();
+}
+
+
+
+void iterate_img() {
+  switch (img_varname) {
+    case "img1":
+      img = img2;
+      update_loop_limits();
+      img_varname = "img2";
+      print("img = ", img_varname, "\n"); 
+      break;
+    case "img2":
+      img = img3;
+      update_loop_limits();
+      img_varname = "img3";
+      print("img = ", img_varname, "\n");
+      break;
+    case "img3":
+      img = img1;
+      update_loop_limits();
+      img_varname = "img1";
+      print("img = ", img_varname, "\n");
+      break;
+  }
 }
